@@ -1,21 +1,14 @@
 mod linesplit;
+mod geminfo;
 
 use std::env;
 use ansi_term::Colour::{Green, Yellow};
 use ansi_term::Style;
 use chrono::DateTime;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-struct Geminfo {
-    name: String,
-    version: String,
-    info: String,
-    source_code_uri: String,
-    homepage_uri: String,
-    version_created_at: String,
-    licenses: Vec<String>,
-}
+use geminfo::Geminfo;
+
+const API_URL: &str = "https://rubygems.org/api/v1";
 
 #[tokio::main]
 async fn main() {
@@ -36,16 +29,16 @@ async fn fetch_and_print_gem_info(gem_name: &str) {
 
     println!(
         "* {} - {} ({})\n\t{}\n\t[ {} | {} ]\n",
-        Style::new().bold().fg(Yellow).paint(geminfo.name),
-        Style::new().fg(Green).paint(geminfo.version),
+        Style::new().bold().fg(Yellow).paint(&geminfo.name),
+        Style::new().fg(Green).paint(&geminfo.version),
         Style::new().fg(Green).paint(parsed_date),
         splitted_info,
-        geminfo.source_code_uri,
+        geminfo.url(),
         geminfo.licenses[0]
     );
 }
 
 async fn fetch_gem_data(gem_name: &str) -> Result<Geminfo, reqwest::Error> {
-    let url: String = format!("https://rubygems.org/api/v1/gems/{}.json", gem_name.to_string());
+    let url: String = format!("{}/gems/{}.json", API_URL, gem_name.to_string());
     Ok(reqwest::get(url).await?.json::<Geminfo>().await?)
 }
